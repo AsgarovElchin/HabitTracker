@@ -4,9 +4,7 @@ import com.plcoding.habittracker.feature.habits.domain.CompletionRecord
 import com.plcoding.habittracker.feature.habits.domain.Habit
 import com.plcoding.habittracker.feature.habits.domain.HabitIcon
 import com.plcoding.habittracker.feature.habits.domain.WeekDays
-import java.time.Instant
-import java.time.ZoneId
-import java.time.ZonedDateTime
+import java.time.LocalDate
 
 fun HabitEntity.toHabit(): Habit {
     return Habit(
@@ -22,8 +20,7 @@ fun HabitEntity.toHabit(): Habit {
             saturday = saturday,
             sunday = sunday
         ),
-        createdAt = Instant.ofEpochMilli(createdAt)
-            .atZone(ZoneId.of("UTC"))
+        createdAt = LocalDate.ofEpochDay(createdAt)
     )
 }
 
@@ -39,18 +36,13 @@ fun Habit.toHabitEntity(): HabitEntity {
         friday = weekDays.friday,
         saturday = weekDays.saturday,
         sunday = weekDays.sunday,
-        createdAt = createdAt.toInstant().toEpochMilli()
+        createdAt = createdAt.toEpochDay()
     )
 }
 
 fun HabitCompletionRaw.toCompletionRecord(): CompletionRecord {
     return CompletionRecord(
         habitId = habitId,
-        date = Instant.ofEpochMilli(date)
-            .atZone(ZoneId.of("UTC"))
+        date = LocalDate.ofEpochDay(date)
     )
-}
-
-fun ZonedDateTime.toEpochMillis(): Long {
-    return toInstant().toEpochMilli()
 }

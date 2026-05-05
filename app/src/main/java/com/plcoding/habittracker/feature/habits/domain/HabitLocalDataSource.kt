@@ -4,15 +4,15 @@ import com.plcoding.habittracker.core.domain.DataError
 import com.plcoding.habittracker.core.domain.EmptyResult
 import kotlinx.coroutines.flow.Flow
 import java.time.DayOfWeek
-import java.time.ZonedDateTime
+import java.time.LocalDate
 
 interface HabitLocalDataSource {
 
     fun getHabitsForDayOfWeek(dayOfWeek: DayOfWeek): Flow<List<Habit>>
 
-    fun getCompletedHabitIdsForDate(date: ZonedDateTime): Flow<Set<Long>>
+    fun getCompletedHabitIdsForDate(date: LocalDate): Flow<Set<Long>>
 
-    suspend fun toggleCompletion(habitId: Long, date: ZonedDateTime)
+    suspend fun toggleCompletion(habitId: Long, date: LocalDate)
 
     suspend fun upsertHabit(habit: Habit): EmptyResult<DataError.Local>
 
@@ -24,13 +24,10 @@ interface HabitLocalDataSource {
 
     suspend fun getAllHabits(): List<Habit>
 
-    suspend fun getCompletionsInRange(
-        start: ZonedDateTime,
-        end: ZonedDateTime
-    ): List<CompletionRecord>
+    suspend fun getCompletionsInRange(start: LocalDate, end: LocalDate): List<CompletionRecord>
 }
 
 data class CompletionRecord(
     val habitId: Long,
-    val date: ZonedDateTime
+    val date: LocalDate
 )

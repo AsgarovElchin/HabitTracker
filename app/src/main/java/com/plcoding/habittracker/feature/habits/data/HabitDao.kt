@@ -50,17 +50,17 @@ interface HabitDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertCompletion(completion: HabitCompletionEntity)
 
-    @Query("DELETE FROM habit_completions WHERE habit_id = :habitId AND date = :dateMillis")
-    suspend fun deleteCompletion(habitId: Long, dateMillis: Long)
+    @Query("DELETE FROM habit_completions WHERE habit_id = :habitId AND date = :epochDay")
+    suspend fun deleteCompletion(habitId: Long, epochDay: Long)
 
-    @Query("SELECT EXISTS(SELECT 1 FROM habit_completions WHERE habit_id = :habitId AND date = :dateMillis)")
-    suspend fun isCompleted(habitId: Long, dateMillis: Long): Boolean
+    @Query("SELECT EXISTS(SELECT 1 FROM habit_completions WHERE habit_id = :habitId AND date = :epochDay)")
+    suspend fun isCompleted(habitId: Long, epochDay: Long): Boolean
 
-    @Query("SELECT habit_id FROM habit_completions WHERE date = :dateMillis")
-    fun getCompletedHabitIdsForDate(dateMillis: Long): Flow<List<Long>>
+    @Query("SELECT habit_id FROM habit_completions WHERE date = :epochDay")
+    fun getCompletedHabitIdsForDate(epochDay: Long): Flow<List<Long>>
 
-    @Query("SELECT habit_id, date FROM habit_completions WHERE date >= :startMillis AND date <= :endMillis")
-    suspend fun getCompletionsInRange(startMillis: Long, endMillis: Long): List<HabitCompletionRaw>
+    @Query("SELECT habit_id, date FROM habit_completions WHERE date >= :startDay AND date <= :endDay")
+    suspend fun getCompletionsInRange(startDay: Long, endDay: Long): List<HabitCompletionRaw>
 }
 
 data class HabitCompletionRaw(

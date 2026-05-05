@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.ZonedDateTime
+import java.time.LocalDate
 
 class CreateEditHabitViewModel(
     private val dataSource: HabitLocalDataSource,
@@ -98,9 +98,9 @@ class CreateEditHabitViewModel(
                 icon = currentState.selectedIcon,
                 weekDays = currentState.weekDays,
                 createdAt = if (habitId != null) {
-                    dataSource.getHabitById(habitId)?.createdAt ?: ZonedDateTime.now()
+                    dataSource.getHabitById(habitId)?.createdAt ?: LocalDate.now()
                 } else {
-                    ZonedDateTime.now()
+                    LocalDate.now()
                 },
             )
             dataSource.upsertHabit(habit).onSuccess {

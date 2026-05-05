@@ -47,7 +47,7 @@ import com.plcoding.habittracker.core.presentation.designsystem.HabitTrackerTopB
 import com.plcoding.habittracker.feature.habits.domain.HabitIcon
 import com.plcoding.habittracker.ui.theme.HabitTrackerTheme
 import org.koin.androidx.compose.koinViewModel
-import java.time.ZonedDateTime
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -77,7 +77,7 @@ private fun TodayScreen(
     onNavigateToCreate: () -> Unit,
     onNavigateToStats: () -> Unit,
 ) {
-    val now = ZonedDateTime.now()
+    val now = LocalDate.now()
     val dateFormatter = DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.getDefault())
 
     Box(modifier = Modifier.fillMaxSize()) {

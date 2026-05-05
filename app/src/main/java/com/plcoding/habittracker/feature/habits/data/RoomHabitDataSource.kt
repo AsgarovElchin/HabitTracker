@@ -9,7 +9,7 @@ import com.plcoding.habittracker.feature.habits.domain.HabitLocalDataSource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.time.DayOfWeek
-import java.time.ZonedDateTime
+import java.time.LocalDate
 
 class RoomHabitDataSource(
     private val dao: HabitDao
@@ -25,24 +25,19 @@ class RoomHabitDataSource(
             DayOfWeek.SATURDAY -> dao.getHabitsForSaturday()
             DayOfWeek.SUNDAY -> dao.getHabitsForSunday()
         }
-        return entityFlow.map { entities ->
-            entities.map { it.toHabit() }
-        }
+        return entityFlow.map { entities -> entities.map { it.toHabit() } }
     }
 
-    override fun getCompletedHabitIdsForDate(date: ZonedDateTime): Flow<Set<Long>> {
-        return dao.getCompletedHabitIdsForDate(date.toEpochMillis())
-            .map { it.toSet() }
+    override fun getCompletedHabitIdsForDate(date: LocalDate): Flow<Set<Long>> {
+        return dao.getCompletedHabitIdsForDate(date.toEpochDay()).map { it.toSet() }
     }
 
-    override suspend fun toggleCompletion(habitId: Long, date: ZonedDateTime) {
-        val millis = date.toEpochMillis()
-        if (dao.isCompleted(habitId, millis)) {
-            dao.deleteCompletion(habitId, millis)
+    override suspend fun toggleCompletion(habitId: Long, date: LocalDate) {
+        val epochDay = date.toEpochDay()
+        if (dao.isCompleted(habitId, epochDay)) {
+            dao.deleteCompletion(habitId, epochDay)
         } else {
-            dao.insertCompletion(
-                HabitCompletionEntity(habitId = habitId, date = millis)
-            )
+            dao.insertCompletion(HabitCompletionEntity(habitId = habitId, date = epochDay))
         }
     }
 
@@ -71,13 +66,10 @@ class RoomHabitDataSource(
         return dao.getAllHabits().map { it.toHabit() }
     }
 
-    override suspend fun getCompletionsInRange(
-        start: ZonedDateTime,
-        end: ZonedDateTime
-    ): List<CompletionRecord> {
+    override suspend fun getCompletionsInRange(start: LocalDate, end: LocalDate): List<CompletionRecord> {
         return dao.getCompletionsInRange(
-            startMillis = start.toEpochMillis(),
-            endMillis = end.toEpochMillis()
+            startDay = start.toEpochDay(),
+            endDay = end.toEpochDay()
         ).map { it.toCompletionRecord() }
     }
 }

@@ -11,8 +11,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.ZoneId
-import java.time.ZonedDateTime
 import java.time.temporal.TemporalAdjusters
 
 class StatisticsViewModel(
@@ -24,21 +22,15 @@ class StatisticsViewModel(
 
     init {
         viewModelScope.launch {
-            val now = ZonedDateTime.now()
-            val zone = now.zone
-            val todayLocal = now.toLocalDate()
+            val today = LocalDate.now()
             val allHabits = dataSource.getAllHabits()
 
             if (allHabits.isEmpty()) return@launch
 
             val earliestCreation = allHabits.minOf { it.createdAt }
-            val completions = dataSource.getCompletionsInRange(earliestCreation, now)
+            val completions = dataSource.getCompletionsInRange(earliestCreation, today)
             val completionsByHabit = completions.groupBy { it.habitId }
                 .mapValues { (_, records) -> records.map { it.date }.toSet() }
-
-            val thisWeekPercentage = computeThisWeekPercentage(
-                allHabits, completionsByHabit, todayLocal, zone
-            )
 
             val habitStreaks = allHabits.map { habit ->
                 val dates = completionsByHabit[habit.id] ?: emptySet()
@@ -46,24 +38,18 @@ class StatisticsViewModel(
                     habitId = habit.id,
                     name = habit.name,
                     icon = habit.icon,
-                    currentStreak = StreakCalculator.computeCurrentStreak(habit, dates, now),
-                    bestStreak = StreakCalculator.computeBestStreak(habit, dates, now),
+                    currentStreak = StreakCalculator.computeCurrentStreak(habit, dates, today),
+                    bestStreak = StreakCalculator.computeBestStreak(habit, dates, today),
                 )
             }
 
-            val globalBestStreak = habitStreaks.maxOfOrNull { it.bestStreak } ?: 0
-
-            val heatmapData = computeHeatmap(
-                allHabits, completionsByHabit, todayLocal, zone
-            )
-
             _state.update {
                 StatisticsState(
-                    thisWeekPercentage = thisWeekPercentage,
-                    bestStreak = globalBestStreak,
+                    thisWeekPercentage = computeThisWeekPercentage(allHabits, completionsByHabit, today),
+                    bestStreak = habitStreaks.maxOfOrNull { it.bestStreak } ?: 0,
                     activeHabitCount = allHabits.size,
-                    heatmapData = heatmapData,
-                    habitStreaks = habitStreaks,
+                    heatmapData = computeHeatmap(allHabits, completionsByHabit, today),
+                    habitStreaks = habitStreaks.sortedByDescending { it.bestStreak },
                 )
             }
         }
@@ -71,30 +57,19 @@ class StatisticsViewModel(
 
     private fun computeThisWeekPercentage(
         habits: List<Habit>,
-        completionsByHabit: Map<Long, Set<ZonedDateTime>>,
-        todayLocal: LocalDate,
-        zone: ZoneId,
+        completionsByHabit: Map<Long, Set<LocalDate>>,
+        today: LocalDate,
     ): Int {
-        val mondayOfThisWeek = todayLocal.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+        val monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
         var totalScheduled = 0
         var totalCompleted = 0
 
-        var day = mondayOfThisWeek
-        while (!day.isAfter(todayLocal)) {
-            val dayOfWeek = day.dayOfWeek
+        var day = monday
+        while (!day.isAfter(today)) {
             for (habit in habits) {
-                if (habit.weekDays.isScheduledFor(dayOfWeek)) {
-                    val createdLocal = habit.createdAt.withZoneSameInstant(zone).toLocalDate()
-                    if (!day.isBefore(createdLocal)) {
-                        totalScheduled++
-                        val dates = completionsByHabit[habit.id] ?: emptySet()
-                        val completedLocalDates = dates.map {
-                            it.withZoneSameInstant(zone).toLocalDate()
-                        }.toSet()
-                        if (day in completedLocalDates) {
-                            totalCompleted++
-                        }
-                    }
+                if (habit.weekDays.isScheduledFor(day.dayOfWeek) && !day.isBefore(habit.createdAt)) {
+                    totalScheduled++
+                    if (day in (completionsByHabit[habit.id] ?: emptySet())) totalCompleted++
                 }
             }
             day = day.plusDays(1)
@@ -105,40 +80,29 @@ class StatisticsViewModel(
 
     private fun computeHeatmap(
         habits: List<Habit>,
-        completionsByHabit: Map<Long, Set<ZonedDateTime>>,
-        todayLocal: LocalDate,
-        zone: ZoneId,
+        completionsByHabit: Map<Long, Set<LocalDate>>,
+        today: LocalDate,
     ): List<HeatmapDay> {
-        val sundayOfThisWeek = todayLocal.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
-        val mondayStart = sundayOfThisWeek.minusDays(27)
+        val sunday = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))
+        val start = sunday.minusDays(27)
 
         return (0 until 28).map { offset ->
-            val day = mondayStart.plusDays(offset.toLong())
-            val dayOfWeek = day.dayOfWeek
+            val day = start.plusDays(offset.toLong())
             var scheduled = 0
             var completed = 0
 
             for (habit in habits) {
-                if (habit.weekDays.isScheduledFor(dayOfWeek)) {
-                    val createdLocal = habit.createdAt.withZoneSameInstant(zone).toLocalDate()
-                    if (!day.isBefore(createdLocal)) {
-                        scheduled++
-                        val dates = completionsByHabit[habit.id] ?: emptySet()
-                        val completedLocalDates = dates.map {
-                            it.withZoneSameInstant(zone).toLocalDate()
-                        }.toSet()
-                        if (day in completedLocalDates) {
-                            completed++
-                        }
-                    }
+                if (habit.weekDays.isScheduledFor(day.dayOfWeek) && !day.isBefore(habit.createdAt)) {
+                    scheduled++
+                    if (day in (completionsByHabit[habit.id] ?: emptySet())) completed++
                 }
             }
 
             HeatmapDay(
                 date = day,
                 completionRatio = if (scheduled > 0) completed.toFloat() / scheduled else 0f,
-                isToday = day == todayLocal,
-                isFuture = day.isAfter(todayLocal),
+                isToday = day == today,
+                isFuture = day.isAfter(today),
             )
         }
     }
