@@ -67,6 +67,7 @@ dependencies {
     implementation(libs.bundles.koin)
     implementation(libs.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.coroutines.android)
     ksp(libs.room.compiler)
     testImplementation(libs.junit5.api)
     testImplementation(libs.junit5.params)
