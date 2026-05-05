@@ -10,14 +10,14 @@ Single-module Jetpack Compose app · `com.plcoding.habittracker`
 | UI mockups | `specs/Habit Tracker — Design System & Screens.html` — read only the section for the screen you're building |
 | Fonts | `specs/Fonts/` — Inter and Manrope variable fonts |
 
-Do **not** inline requirements or design details into code comments. Always lazy-load from the specs when needed.
+Always lazy-load from specs when needed. Do not inline requirements or design details into code.
 
-## Mandatory Skill Loading
+## Skills
 
-Before working on a layer, **always load the corresponding skill first**.
+Load the matching skill before working on each layer.
 
-| Layer | Skill to load |
-|-------|---------------|
+| Layer | Skill |
+|-------|-------|
 | Presentation / MVI | `android-presentation-mvi` |
 | Compose screen architecture | `android-compose-architecture` |
 | Compose UI components | `android-compose-components` |
@@ -33,7 +33,6 @@ Before working on a layer, **always load the corresponding skill first**.
 
 ## Rules
 
-- **Single module, layered packages.** Use the same package structure as the `android-module-structure` skill (core, feature, etc.) but as packages within `:app`, not separate modules.
-- **No tests unless asked.** Do not write tests unless the user explicitly requests them.
-- **Lazy mockup loading.** When building UI, read the HTML mockup file for that specific screen only — do not read the entire file upfront.
-- **Git hygiene.** `git add` every new file immediately after creating it. Create meaningful, modular commits at logical checkpoints — don't batch everything into one giant commit.
+- **Single module, layered packages.** Feature code lives under `com.plcoding.habittracker.feature.<name>/{data,domain,presentation}`; shared code under `core/`.
+- **No tests unless asked.**
+- **Git hygiene.** Run `git add <file>` immediately after creating every new file — no exceptions. Create meaningful, modular commits at logical checkpoints (e.g. after completing a screen, a data layer change, or a DI wiring); never batch unrelated changes into one commit.
